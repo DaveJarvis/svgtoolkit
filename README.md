@@ -1,11 +1,4 @@
-# Readme for SVG Toolkit
-
-Instead of putting too much stuff here I will
-direct you to the web page at http://www.cmis.csiro.au/svg/
-
-That has a much larger document with examples and the
-things in SVG we still have to do (as well as a big
-list of bugs!)
+# CSIRO SVG Toolkit
 
 The rest of this readme will just get the thing running.
 
