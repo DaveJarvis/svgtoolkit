@@ -1,0 +1,9 @@
+This version of the CSIRO SVG Toolkit
+contains a precompiled version of Rhino (version 1.5)
+in the file js.jar available (with source) from:
+
+http://www.mozilla.org/rhino
+
+Rhino is distributed under the MPL (http://www.mozilla.org/MPL)
+
+

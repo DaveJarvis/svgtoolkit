@@ -1,0 +1,238 @@
+/*
+ * CSSStyleSheetImpl.java
+ *
+ * SteadyState CSS2 Parser
+ *
+ * Copyright (C) 1999, 2000 Steady State Software Ltd.  All rights reserved.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ * To contact the authors of the library, write to Steady State Software Ltd.,
+ * Unit 5, Manor Farm Courtyard, Rowsham, Buckinghamshire, HP22 4QP, England
+ *
+ * http://www.steadystate.com/css/
+ * mailto:css@steadystate.co.uk
+ *
+ * $Id: CSSStyleSheetImpl.java,v 1.1 2002/02/21 08:19:02 brett Exp $
+ */
+
+package com.steadystate.css.dom;
+
+import com.steadystate.css.parser.CSSOMParser;
+import org.w3c.css.sac.CSSException;
+import org.w3c.css.sac.InputSource;
+import org.w3c.dom.DOMException;
+import org.w3c.dom.css.CSSRule;
+import org.w3c.dom.stylesheets.MediaList;
+
+import java.io.IOException;
+import java.io.StringReader;
+
+/**
+ * TODO: Setting the media list
+ *
+ * @author David Schweinsberg
+ * @version $Release$
+ */
+public class CSSStyleSheetImpl implements org.w3c.dom.css.CSSStyleSheet {
+
+    private boolean _disabled = false;
+    private org.w3c.dom.Node _ownerNode = null;
+    private org.w3c.dom.stylesheets.StyleSheet _parentStyleSheet = null;
+    private String _href = null;
+    private String _title = null;
+    private org.w3c.dom.stylesheets.MediaList _media = null;
+    private org.w3c.dom.css.CSSRule _ownerRule = null;
+    private boolean _readOnly = false;
+    private CSSRuleListImpl _rules = null;
+
+    public CSSStyleSheetImpl() {
+    }
+
+    public String getType() {
+        return "text/css";
+    }
+
+    public boolean getDisabled() {
+        return _disabled;
+    }
+
+    /**
+     * We will need to respond more fully if a stylesheet is disabled, probably
+     * by generating an event for the main application.
+     */
+    public void setDisabled(boolean disabled) {
+        _disabled = disabled;
+    }
+
+    public org.w3c.dom.Node getOwnerNode() {
+        return _ownerNode;
+    }
+
+    public org.w3c.dom.stylesheets.StyleSheet getParentStyleSheet() {
+        return _parentStyleSheet;
+    }
+
+    public String getHref() {
+        return _href;
+    }
+
+    public String getTitle() {
+        return _title;
+    }
+
+    public MediaList getMedia() {
+        return _media;
+    }
+
+    public org.w3c.dom.css.CSSRule getOwnerRule() {
+        return _ownerRule;
+    }
+
+    public org.w3c.dom.css.CSSRuleList getCssRules() {
+        return _rules;
+    }
+
+    public int insertRule(String rule, int index) throws
+      org.w3c.dom.DOMException {
+        if (_readOnly) {
+            throw new DOMExceptionImpl(
+              org.w3c.dom.DOMException.NO_MODIFICATION_ALLOWED_ERR,
+              DOMExceptionImpl.READ_ONLY_STYLE_SHEET);
+        }
+
+        try {
+            InputSource is = new InputSource(new StringReader(rule));
+            CSSOMParser parser = new CSSOMParser();
+            parser.setParentStyleSheet(this);
+            org.w3c.dom.css.CSSRule r = parser.parseRule( is);
+
+            if (getCssRules().getLength() > 0) {
+
+                // We need to check that this type of rule can legally go into
+                // the requested position.
+                int msg = -1;
+                if (r.getType() == org.w3c.dom.css.CSSRule.CHARSET_RULE) {
+
+                    // Index must be 0, and there can be only one charset rule
+                    if (index != 0) {
+                        msg = DOMExceptionImpl.CHARSET_NOT_FIRST;
+                    } else if (getCssRules().item(0).getType()
+                            == org.w3c.dom.css.CSSRule.CHARSET_RULE) {
+                        msg = DOMExceptionImpl.CHARSET_NOT_UNIQUE;
+                    }
+                } else if (r.getType() == org.w3c.dom.css.CSSRule.IMPORT_RULE) {
+
+                    // Import rules must preceed all other rules (except
+                    // charset rules)
+                    if (index <= getCssRules().getLength()) {
+                        for (int i = 0; i < index; i++) {
+                            int rt = getCssRules().item(i).getType();
+                            if ((rt != org.w3c.dom.css.CSSRule.CHARSET_RULE)
+                                    || (rt != org.w3c.dom.css.CSSRule.IMPORT_RULE)) {
+                                msg = DOMExceptionImpl.IMPORT_NOT_FIRST;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (msg > -1) {
+                    throw new DOMExceptionImpl(
+                      org.w3c.dom.DOMException.HIERARCHY_REQUEST_ERR,
+                      msg);
+                }
+            }
+
+            // Insert the rule into the list of rules
+            ((CSSRuleListImpl)getCssRules()).insert(r, index);
+
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new DOMExceptionImpl(
+              org.w3c.dom.DOMException.INDEX_SIZE_ERR,
+              DOMExceptionImpl.ARRAY_OUT_OF_BOUNDS,
+              e.getMessage());
+        } catch (CSSException e) {
+            throw new DOMExceptionImpl(
+              org.w3c.dom.DOMException.SYNTAX_ERR,
+              DOMExceptionImpl.SYNTAX_ERROR,
+              e.getMessage());
+        } catch (IOException e) {
+            throw new DOMExceptionImpl(
+              org.w3c.dom.DOMException.SYNTAX_ERR,
+              DOMExceptionImpl.SYNTAX_ERROR,
+              e.getMessage());
+        }
+        return index;
+    }
+
+    public void deleteRule(int index) throws org.w3c.dom.DOMException {
+        if (_readOnly) {
+            throw new DOMExceptionImpl(
+              org.w3c.dom.DOMException.NO_MODIFICATION_ALLOWED_ERR,
+              DOMExceptionImpl.READ_ONLY_STYLE_SHEET);
+        }
+
+        try {
+            ((CSSRuleListImpl)getCssRules()).delete(index);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new DOMExceptionImpl(
+              DOMException.INDEX_SIZE_ERR,
+              DOMExceptionImpl.ARRAY_OUT_OF_BOUNDS,
+              e.getMessage());
+        }
+    }
+
+    public boolean isReadOnly() {
+        return _readOnly;
+    }
+
+    public void setReadOnly(boolean b) {
+        _readOnly = b;
+    }
+
+    public void setOwnerNode( org.w3c.dom.Node ownerNode) {
+        _ownerNode = ownerNode;
+    }
+
+    public void setParentStyleSheet(
+      org.w3c.dom.stylesheets.StyleSheet parentStyleSheet) {
+        _parentStyleSheet = parentStyleSheet;
+    }
+
+    public void setHref(String href) {
+        _href = href;
+    }
+
+    public void setTitle(String title) {
+        _title = title;
+    }
+
+    public void setMedia(String mediaText) {
+        // MediaList _media = null;
+    }
+
+    public void setOwnerRule( CSSRule ownerRule) {
+        _ownerRule = ownerRule;
+    }
+    
+    public void setRuleList(CSSRuleListImpl rules) {
+        _rules = rules;
+    }
+    
+    public String toString() {
+        return _rules.toString();
+    }
+}

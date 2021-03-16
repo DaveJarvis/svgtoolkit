@@ -1,0 +1,52 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN"
+	"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+
+<svg width="600" height="600" onload="printLoaded()" onunload="printUnloaded()" style="fill:none">
+
+  <title> Simple shapes </title>
+
+  <defs>
+	<script type="text\ecmascript" >
+        <![CDATA[
+
+            //importClass(java.lang.System);
+            importPackage(java.lang);
+
+		function helloWorld(evt) {
+			System.out.println("hello world!!");
+
+			x = evt.getClientX();
+			y = evt.getClientY();
+                 currentScale = document.getRootElement().getCurrentScale();
+                 currentTranslate = document.getRootElement().getCurrentTranslate();
+
+                  x = x/currentScale;
+                  y = y/currentScale;
+			x -= currentTranslate.getX();
+                  y -= currentTranslate.getY();
+                  
+			System.out.println(evt.getClientX() + ", " + evt.getClientY() + ", " + x + ", " + y);
+		}
+
+            function helloWorld2() {
+			System.out.println("hello world2!!");
+ 		}
+
+		function printLoaded() {
+		     System.out.println("got onload event");
+ 		}
+
+		function printUnloaded() {
+			System.out.println("got onunload event");
+ 		}
+
+        ]]>
+      </script>
+  </defs>
+
+  <g style="fill:red; stroke:navy; stroke-width:2; stroke-dasharray: 5 2;" onclick="helloWorld2()" >
+    <circle cx="300" cy="300" r="40" onclick="helloWorld(evt)"/>
+    
+  </g>
+</svg>
