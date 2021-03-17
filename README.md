@@ -1,7 +1,12 @@
+# Archive
+
+This version has been upgraded to build with JDK 15 and Java's
+XML DOM module. A number of issues with the implementation have
+been resolved with Apache Batik. Highly recommend using Batik instead.
+
 # CSIRO SVG Toolkit
 
 The rest of this readme will just get the thing running.
-
 
 What you will need
 ------------------
